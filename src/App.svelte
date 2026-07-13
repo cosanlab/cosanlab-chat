@@ -16,8 +16,7 @@
   })
 
   let user = $state(null) // {uid, email} | null
-  let authReady = $state(false)
-  $effect(() => onAuth((u) => { user = u; authReady = true }))
+  $effect(() => onAuth((u) => (user = u)))
   $effect(() => { completeMagicLink().catch((e) => console.error('magic link', e)) })
 
   // Room gate state. meta === undefined → still loading; null → no such room
@@ -26,6 +25,7 @@
   let denied = $state(false)
   $effect(() => {
     if (route.view !== 'room') return
+    void user // tracked dep: RTDB cancels denied listeners; re-subscribe on auth changes
     meta = undefined
     denied = false
     return onRoomMeta(route.roomId, (m) => { meta = m; denied = false }, () => (denied = true))
