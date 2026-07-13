@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+// firebase.js eagerly initializes the SDK; sortRooms is pure — mock the module out
+vi.mock('./firebase.js', () => ({ db: {}, auth: {}, USING_EMULATORS: false }))
 import { sortRooms } from './rooms.js'
 
 describe('sortRooms', () => {
