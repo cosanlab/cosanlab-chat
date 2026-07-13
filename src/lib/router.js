@@ -12,7 +12,13 @@ export function isValidSlug(s) {
 export function parsePath(pathname) {
   const seg = pathname.replace(/\/+$/, '').split('/').slice(1)
   if (seg.length === 0 || seg[0] === '') return { view: 'landing' }
-  const slug = normalizeSlug(decodeURIComponent(seg.join('/')))
+  let decoded
+  try {
+    decoded = decodeURIComponent(seg.join('/'))
+  } catch {
+    return { view: 'notfound', slug: seg.join('/') }
+  }
+  const slug = normalizeSlug(decoded)
   if (slug === 'admin') return { view: 'admin' }
   if (isValidSlug(slug)) return { view: 'room', roomId: slug }
   return { view: 'notfound', slug }
