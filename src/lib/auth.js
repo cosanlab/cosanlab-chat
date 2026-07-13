@@ -39,6 +39,7 @@ export async function completeMagicLink() {
   const email =
     localStorage.getItem(PENDING_KEY) ??
     prompt('Confirm your email to finish signing in:') // link opened on another device
+  if (!email) return false // user dismissed the prompt — stay signed out
   await signInWithEmailLink(auth, email, location.href)
   localStorage.removeItem(PENDING_KEY)
   history.replaceState({}, '', location.pathname) // strip oobCode etc.

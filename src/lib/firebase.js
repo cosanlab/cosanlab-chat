@@ -6,6 +6,8 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth'
 // Firebase emulator suite — no .env.local needed in that mode.
 export const USING_EMULATORS = import.meta.env.VITE_USE_EMULATOR === 'true'
 
+// Web SDK config is public by design (security lives in database.rules.json);
+// env vars keep it swappable between projects.
 const firebaseConfig = USING_EMULATORS
   ? {
       apiKey: 'demo-key',
