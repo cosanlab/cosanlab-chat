@@ -2,8 +2,11 @@
   import { ref, get } from 'firebase/database'
   import { db } from '../../lib/firebase.js'
   import { onAuth, signInWithGoogle, signOutUser } from '../../lib/auth.js'
-  import { onRoomsIndex, onRoomPresence, sortRooms } from '../../lib/rooms.js'
+  import { onRoomsIndex, onRoomPresence, sortRooms, exportAll, onAdminEmails, addAdmin, removeAdmin } from '../../lib/rooms.js'
+  import { downloadJson } from '../../lib/download.js'
+  import { decodeEmail } from '../../lib/keys.js'
   import RoomRow from './RoomRow.svelte'
+  import CreateRoomForm from './CreateRoomForm.svelte'
 
   let user = $state(null)
   let authReady = $state(false)
@@ -44,6 +47,15 @@
   let rows = $derived(
     sortRooms(index, Object.fromEntries(Object.entries(presence).map(([id, p]) => [id, p.count]))),
   )
+
+  let adminEmails = $state([])
+  let adminDraft = $state('')
+  $effect(() => { if (isAdmin) return onAdminEmails((v) => (adminEmails = v)) })
+
+  async function addAdminSubmit(e) {
+    e.preventDefault()
+    if (adminDraft.includes('@')) { await addAdmin(adminDraft); adminDraft = '' }
+  }
 </script>
 
 <main class="min-h-dvh px-4 py-8 max-w-4xl mx-auto">
@@ -70,7 +82,35 @@
         {user.email} · sign out
       </button>
     </header>
-    <div class="flex flex-col gap-2" data-testid="room-table">
+
+    <CreateRoomForm oncreated={() => {}} />
+
+    <details class="mt-4 rounded-xl bg-surface px-4 py-3">
+      <summary class="cursor-pointer text-sm text-mist">admins & export</summary>
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <button class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs" data-testid="export-all"
+                onclick={async () => downloadJson(`cosanlab-chat-all-${new Date().toISOString().slice(0, 10)}.json`, await exportAll())}>
+          export all rooms
+        </button>
+      </div>
+      <form class="mt-3 flex gap-2" onsubmit={addAdminSubmit}>
+        <input class="flex-1 rounded-lg bg-night border border-surface-2 px-3 py-2 text-white"
+               type="email" placeholder="add admin email…" bind:value={adminDraft} data-testid="admin-email-input" />
+        <button class="rounded-lg bg-accent px-3 py-2 text-white" type="submit" data-testid="admin-email-add">Add</button>
+      </form>
+      <ul class="mt-2 flex flex-wrap gap-2">
+        {#each adminEmails as key (key)}
+          <li class="flex items-center gap-1 rounded-full bg-surface-2 px-3 py-1 text-xs">
+            {decodeEmail(key)}
+            {#if decodeEmail(key) !== user.email.toLowerCase()}
+              <button class="text-blush" onclick={() => removeAdmin(decodeEmail(key))}>×</button>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    </details>
+
+    <div class="mt-4 flex flex-col gap-2" data-testid="room-table">
       {#each rows as [roomId, entry] (roomId)}
         <RoomRow {roomId} {entry} presence={presence[roomId] ?? { count: 0, names: [] }} />
       {/each}
