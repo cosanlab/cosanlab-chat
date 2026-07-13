@@ -50,11 +50,28 @@
 
   let adminEmails = $state([])
   let adminDraft = $state('')
+  let headerError = $state('')
   $effect(() => { if (isAdmin) return onAdminEmails((v) => (adminEmails = v)) })
 
   async function addAdminSubmit(e) {
     e.preventDefault()
-    if (adminDraft.includes('@')) { await addAdmin(adminDraft); adminDraft = '' }
+    headerError = ''
+    if (!adminDraft.includes('@')) return
+    try {
+      await addAdmin(adminDraft)
+      adminDraft = ''
+    } catch {
+      headerError = 'couldn’t add admin — still signed in as an admin?'
+    }
+  }
+
+  async function exportAllClick() {
+    headerError = ''
+    try {
+      downloadJson(`cosanlab-chat-all-${new Date().toISOString().slice(0, 10)}.json`, await exportAll())
+    } catch {
+      headerError = 'export failed'
+    }
   }
 </script>
 
@@ -89,7 +106,7 @@
       <summary class="cursor-pointer text-sm text-mist">admins & export</summary>
       <div class="mt-3 flex flex-wrap items-center gap-2">
         <button class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs" data-testid="export-all"
-                onclick={async () => downloadJson(`cosanlab-chat-all-${new Date().toISOString().slice(0, 10)}.json`, await exportAll())}>
+                onclick={exportAllClick}>
           export all rooms
         </button>
       </div>
@@ -103,11 +120,12 @@
           <li class="flex items-center gap-1 rounded-full bg-surface-2 px-3 py-1 text-xs">
             {decodeEmail(key)}
             {#if decodeEmail(key) !== user.email.toLowerCase()}
-              <button class="text-blush" onclick={() => removeAdmin(decodeEmail(key))}>×</button>
+              <button class="text-blush" onclick={() => { headerError = ''; removeAdmin(decodeEmail(key)).catch(() => (headerError = 'couldn’t remove admin')) }}>×</button>
             {/if}
           </li>
         {/each}
       </ul>
+      {#if headerError}<p class="mt-2 text-blush text-xs" data-testid="admin-error">{headerError}</p>{/if}
     </details>
 
     <div class="mt-4 flex flex-col gap-2" data-testid="room-table">

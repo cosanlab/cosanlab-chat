@@ -8,6 +8,7 @@
   let expanded = $state(false)
   let copied = $state(false)
   let confirming = $state(null)
+  let actionError = $state('')
   const today = () => new Date().toISOString().slice(0, 10)
 
   function copyLink() {
@@ -42,30 +43,35 @@
       {/if}
       <div class="mt-3 flex flex-wrap gap-2">
         <button class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs" data-testid="toggle-locked"
-                onclick={() => setRoomFlag(roomId, 'locked', !entry.locked)}>
+                onclick={() => { actionError = ''; setRoomFlag(roomId, 'locked', !entry.locked).catch(() => (actionError = 'lock/unlock failed — still signed in as an admin?')) }}>
           {entry.locked ? 'unlock' : 'lock'}
         </button>
         <button class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs" data-testid="toggle-private"
-                onclick={() => setRoomFlag(roomId, 'private', !entry.private)}>
+                onclick={() => { actionError = ''; setRoomFlag(roomId, 'private', !entry.private).catch(() => (actionError = 'public/private toggle failed — still signed in as an admin?')) }}>
           make {entry.private ? 'public' : 'private'}
         </button>
         <button class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs" data-testid="export-room"
-                onclick={async () => downloadJson(`${roomId}-${today()}.json`, await exportRoom(roomId))}>
+                onclick={async () => {
+                  actionError = ''
+                  try { downloadJson(`${roomId}-${today()}.json`, await exportRoom(roomId)) }
+                  catch { actionError = 'export failed' }
+                }}>
           export json
         </button>
         <button class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-blush" data-testid="reset-room"
-                onclick={() => (confirming = 'reset')}>reset…</button>
+                onclick={() => { actionError = ''; confirming = 'reset' }}>reset…</button>
         <button class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-blush" data-testid="delete-room"
-                onclick={() => (confirming = 'delete')}>delete…</button>
+                onclick={() => { actionError = ''; confirming = 'delete' }}>delete…</button>
       </div>
       {#if entry.private}<InviteEditor {roomId} />{/if}
       {#if confirming === 'reset'}
         <ConfirmDialog label="Erase every message, reaction, and presence entry in “{entry.name}”? Meta and invites survive."
-                       expected={roomId} onconfirm={() => resetRoom(roomId)} onclose={() => (confirming = null)} />
+                       expected={roomId} onconfirm={() => resetRoom(roomId).catch(() => (actionError = 'reset failed — nothing was deleted'))} onclose={() => (confirming = null)} />
       {:else if confirming === 'delete'}
         <ConfirmDialog label="Permanently delete “{entry.name}” and all its data?"
-                       expected={roomId} onconfirm={() => deleteRoom(roomId)} onclose={() => (confirming = null)} />
+                       expected={roomId} onconfirm={() => deleteRoom(roomId).catch(() => (actionError = 'delete failed — the room is still here'))} onclose={() => (confirming = null)} />
       {/if}
+      {#if actionError}<p class="mt-2 text-blush text-xs" data-testid="action-error">{actionError}</p>{/if}
     </div>
   {/if}
 </div>
