@@ -73,7 +73,8 @@ export function onTyping(roomId, scope, cb) {
 export function joinPresence(roomId, { clientId, name }) {
   const node = ref(db, roomPath(roomId, 'presence', clientId))
   onDisconnect(node).remove()
-  return set(node, { name, ts: serverTimestamp() })
+  set(node, { name, ts: serverTimestamp() })
+  return () => remove(node) // leave(): called on unmount/room switch
 }
 
 export function onPresence(roomId, cb) {

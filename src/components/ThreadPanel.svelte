@@ -6,8 +6,17 @@
   import { replies, typingLabel, groupReactions, sameGroup } from '../lib/derive.js'
   import { isOwnMessage } from '../lib/identity.js'
 
-  let { roomId, identity, parent, messages, reactionsRaw, knownNames = [], onToggleReaction, onClose } =
-    $props()
+  let {
+    roomId,
+    identity,
+    parent,
+    messages,
+    reactionsRaw,
+    knownNames = [],
+    onToggleReaction,
+    onClose,
+    disabled = false,
+  } = $props()
 
   let threadReplies = $derived(replies(messages, parent.id))
 
@@ -92,5 +101,6 @@
     placeholder="Reply in thread…"
     onSend={send}
     mentionNames={knownNames}
+    {disabled}
   />
 </div>

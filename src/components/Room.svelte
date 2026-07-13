@@ -32,11 +32,21 @@
   $effect(() => onTyping(roomId, 'main', (entries) => (typing = entries)))
   $effect(() => onConnected((c) => (connected = c)))
   $effect(() => {
-    joinPresence(roomId, identity)
-    return onPresence(roomId, (p) => {
+    if (meta.locked) {
+      return onPresence(roomId, (p) => {
+        hereCount = p.count
+        presentNames = p.names
+      })
+    }
+    const leave = joinPresence(roomId, identity)
+    const unsub = onPresence(roomId, (p) => {
       hereCount = p.count
       presentNames = p.names
     })
+    return () => {
+      leave()
+      unsub()
+    }
   })
 
   // everyone mentionable: currently present + anyone who has posted
@@ -131,7 +141,7 @@
   >
     <header class="relative px-4 py-2.5 bg-surface border-b border-white/5">
       <h1 class="text-xl leading-6 text-accent" style="font-family: 'Monas', 'American Typewriter', serif">
-        xoxo wasita
+        {meta.name}
       </h1>
       <p class="text-xs text-mist flex items-center gap-1.5">
         <span class="w-1.5 h-1.5 rounded-full {connected ? 'bg-emerald-400' : 'bg-amber-400'}"></span>
@@ -161,6 +171,12 @@
         </div>
       {/if}
     </header>
+
+    {#if meta.locked}
+      <div class="bg-surface-2 text-mist text-sm text-center py-2 px-4" data-testid="locked-banner">
+        🔒 This room is locked — you’re viewing the archive.
+      </div>
+    {/if}
 
     <div class="relative flex-1 min-h-0">
       <div
@@ -200,7 +216,15 @@
     </div>
 
     <TypingDots {label} />
-    <Composer {roomId} {identity} scope="main" onSend={sendMain} autofocus mentionNames={knownNames} />
+    <Composer
+      {roomId}
+      {identity}
+      scope="main"
+      onSend={sendMain}
+      autofocus
+      mentionNames={knownNames}
+      disabled={meta.locked}
+    />
   </main>
 </div>
 
@@ -214,5 +238,6 @@
     {knownNames}
     onToggleReaction={handleToggleReaction}
     onClose={() => (openThreadId = null)}
+    disabled={meta.locked}
   />
 {/if}

@@ -9,10 +9,11 @@
     roomId,
     identity,
     scope,
-    placeholder = 'Say something nice…',
+    placeholder = 'Message — paste an image link to share memes',
     onSend,
     autofocus = false,
     mentionNames = [],
+    disabled = false,
   } = $props()
 
   let text = $state('')
@@ -30,6 +31,7 @@
   // instead of vanishing instantly. Writes are throttled to one refresh per
   // 1.5 s so an audience of typers doesn't hammer the database per keystroke.
   function pingTyping() {
+    if (disabled) return
     const now = Date.now()
     if (now - lastPing > 1500) {
       lastPing = now
@@ -140,6 +142,7 @@
 
   function submit(e) {
     e?.preventDefault()
+    if (disabled) return
     const clean = text.trim()
     if (!clean) return
     onSend(clean)
@@ -155,6 +158,11 @@
 <!-- No emoji button: phones have native emoji keyboards, macOS has ⌃⌘Space,
      and :name: autocompletes. Reactions get their own picker per message. -->
 <div class="relative px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
+  {#if disabled}
+    <div class="px-4 py-3 text-center text-sm text-mist" data-testid="composer-locked">
+      This room is locked.
+    </div>
+  {:else}
   {#if suggestions.length > 0}
     <div
       class="absolute bottom-full left-3 right-3 mb-1 rounded-xl bg-surface-2 shadow-xl ring-1 ring-white/10 overflow-hidden"
@@ -208,4 +216,5 @@
       </svg>
     </button>
   </form>
+  {/if}
 </div>
