@@ -6,16 +6,17 @@
   import { replies, typingLabel, groupReactions, sameGroup } from '../lib/derive.js'
   import { isOwnMessage } from '../lib/identity.js'
 
-  let { identity, parent, messages, reactionsRaw, knownNames = [], onToggleReaction, onClose } = $props()
+  let { roomId, identity, parent, messages, reactionsRaw, knownNames = [], onToggleReaction, onClose } =
+    $props()
 
   let threadReplies = $derived(replies(messages, parent.id))
 
   let typing = $state([])
-  $effect(() => onTyping(parent.id, (entries) => (typing = entries)))
+  $effect(() => onTyping(roomId, parent.id, (entries) => (typing = entries)))
   let label = $derived(typingLabel(typing, identity.clientId))
 
   function send(text) {
-    sendMessage({ name: identity.name, text, parentId: parent.id })
+    sendMessage(roomId, { name: identity.name, text, parentId: parent.id })
   }
 
   function handleKey(e) {
@@ -85,6 +86,7 @@
 
   <TypingDots {label} />
   <Composer
+    {roomId}
     {identity}
     scope={parent.id}
     placeholder="Reply in thread…"

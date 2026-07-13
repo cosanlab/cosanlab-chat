@@ -53,5 +53,5 @@
     </div>
   </main>
 {:else}
-  <Room {identity} />
+  <Room {identity} roomId="lobby" />
 {/if}

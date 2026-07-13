@@ -17,7 +17,7 @@
   import { topLevel, replyCounts, typingLabel, groupReactions, sameGroup } from '../lib/derive.js'
   import { isOwnMessage } from '../lib/identity.js'
 
-  let { identity } = $props()
+  let { identity, roomId } = $props()
 
   let messages = $state([])
   let reactionsRaw = $state({})
@@ -27,13 +27,13 @@
   let hereCount = $state(0)
   let presentNames = $state([])
 
-  $effect(() => onMessages((m) => messages.push(m)))
-  $effect(() => onReactions((r) => (reactionsRaw = r)))
-  $effect(() => onTyping('main', (entries) => (typing = entries)))
+  $effect(() => onMessages(roomId, (m) => messages.push(m)))
+  $effect(() => onReactions(roomId, (r) => (reactionsRaw = r)))
+  $effect(() => onTyping(roomId, 'main', (entries) => (typing = entries)))
   $effect(() => onConnected((c) => (connected = c)))
   $effect(() => {
-    joinPresence(identity)
-    return onPresence((p) => {
+    joinPresence(roomId, identity)
+    return onPresence(roomId, (p) => {
       hereCount = p.count
       presentNames = p.names
     })
@@ -61,7 +61,7 @@
     const mine = groupReactions(reactionsRaw[msgId], identity.clientId).find(
       (r) => r.emoji === emoji,
     )?.mine
-    toggleReaction(msgId, emoji, identity, !!mine)
+    toggleReaction(roomId, msgId, emoji, identity, !!mine)
   }
 
   // --- auto-scroll: stay pinned to the bottom unless the reader scrolled up
@@ -118,7 +118,7 @@
   }
 
   function sendMain(text) {
-    sendMessage({ name: identity.name, text })
+    sendMessage(roomId, { name: identity.name, text })
     jumpToLatest() // your own message always brings you back to the bottom
   }
 </script>
@@ -200,12 +200,13 @@
     </div>
 
     <TypingDots {label} />
-    <Composer {identity} scope="main" onSend={sendMain} autofocus mentionNames={knownNames} />
+    <Composer {roomId} {identity} scope="main" onSend={sendMain} autofocus mentionNames={knownNames} />
   </main>
 </div>
 
 {#if openParent}
   <ThreadPanel
+    {roomId}
     {identity}
     parent={openParent}
     {messages}

@@ -2,6 +2,7 @@ import {
   ref,
   push,
   set,
+  update,
   remove,
   onChildAdded,
   onValue,
@@ -9,70 +10,74 @@ import {
   serverTimestamp,
 } from 'firebase/database'
 import { db } from './firebase.js'
+import { roomPath } from './paths.js'
 import { rememberOwnMessage } from './identity.js'
 
 export const TEXT_MAX = 500
 
 // --- messages ---------------------------------------------------------------
 
-export function sendMessage({ name, text, parentId = null }) {
+export function sendMessage(roomId, { name, text, parentId = null }) {
   const clean = String(text).trim().slice(0, TEXT_MAX)
   if (!clean) return null
   const msg = { name, text: clean, ts: serverTimestamp() }
   if (parentId) msg.parentId = parentId
-  const r = push(ref(db, 'messages'), msg)
-  rememberOwnMessage(r.key) // push ids are known synchronously
-  return r
+  const key = push(ref(db, roomPath(roomId, 'messages'))).key
+  // Multi-path: the send also bumps the room's activity stamp for the
+  // dashboard sort. Rules allow both paths iff the room is unlocked.
+  update(ref(db), {
+    [roomPath(roomId, 'messages', key)]: msg,
+    [`roomsIndex/${roomId}/lastActivityAt`]: serverTimestamp(),
+  })
+  rememberOwnMessage(key)
+  return key
 }
 
-// Streams every message (existing + new) as {id, name, text, ts, parentId}.
-// RTDB's latency compensation fires child_added for our own pushes
-// immediately, which is what makes sends feel instant.
-export function onMessages(cb) {
-  return onChildAdded(ref(db, 'messages'), (snap) => {
+export function onMessages(roomId, cb) {
+  return onChildAdded(ref(db, roomPath(roomId, 'messages')), (snap) => {
     cb({ id: snap.key, parentId: null, ...snap.val() })
   })
 }
 
 // --- reactions --------------------------------------------------------------
 
-export function toggleReaction(msgId, emoji, { clientId, name }, currentlyMine) {
-  const node = ref(db, `reactions/${msgId}/${emoji}/${clientId}`)
+export function toggleReaction(roomId, msgId, emoji, { clientId, name }, currentlyMine) {
+  const node = ref(db, roomPath(roomId, 'reactions', msgId, emoji, clientId))
   return currentlyMine ? remove(node) : set(node, name)
 }
 
-export function onReactions(cb) {
-  return onValue(ref(db, 'reactions'), (snap) => cb(snap.val() ?? {}))
+export function onReactions(roomId, cb) {
+  return onValue(ref(db, roomPath(roomId, 'reactions')), (snap) => cb(snap.val() ?? {}))
 }
 
 // --- typing (scope = 'main' or a thread's parent message id) ----------------
 
-export function setTyping(scope, { clientId, name }, isTyping) {
-  const node = ref(db, `typing/${scope}/${clientId}`)
+export function setTyping(roomId, scope, { clientId, name }, isTyping) {
+  const node = ref(db, roomPath(roomId, 'typing', scope, clientId))
   if (isTyping) {
-    onDisconnect(node).remove() // never strand a "… is typing" if a phone drops
+    onDisconnect(node).remove()
     return set(node, { name, ts: serverTimestamp() })
   }
   return remove(node)
 }
 
-export function onTyping(scope, cb) {
-  return onValue(ref(db, `typing/${scope}`), (snap) => {
+export function onTyping(roomId, scope, cb) {
+  return onValue(ref(db, roomPath(roomId, 'typing', scope)), (snap) => {
     const val = snap.val() ?? {}
     cb(Object.entries(val).map(([clientId, v]) => ({ clientId, name: v.name, ts: v.ts })))
   })
 }
 
-// --- presence (live audience count) ------------------------------------------
+// --- presence ----------------------------------------------------------------
 
-export function joinPresence({ clientId, name }) {
-  const node = ref(db, `presence/${clientId}`)
+export function joinPresence(roomId, { clientId, name }) {
+  const node = ref(db, roomPath(roomId, 'presence', clientId))
   onDisconnect(node).remove()
   return set(node, { name, ts: serverTimestamp() })
 }
 
-export function onPresence(cb) {
-  return onValue(ref(db, 'presence'), (snap) => {
+export function onPresence(roomId, cb) {
+  return onValue(ref(db, roomPath(roomId, 'presence')), (snap) => {
     const val = snap.val() ?? {}
     const entries = Object.values(val)
     cb({ count: entries.length, names: entries.map((e) => e.name).filter(Boolean) })

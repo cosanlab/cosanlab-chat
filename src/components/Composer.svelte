@@ -6,6 +6,7 @@
   import { mentionQuery, searchNames } from '../lib/mentions.js'
 
   let {
+    roomId,
     identity,
     scope,
     placeholder = 'Say something nice…',
@@ -32,12 +33,12 @@
     const now = Date.now()
     if (now - lastPing > 1500) {
       lastPing = now
-      setTyping(scope, identity, true)
+      setTyping(roomId, scope, identity, true)
     }
     clearTimeout(typingTimer)
     typingTimer = setTimeout(() => {
       lastPing = 0
-      setTyping(scope, identity, false)
+      setTyping(roomId, scope, identity, false)
     }, 3000)
   }
 
@@ -146,7 +147,7 @@
     suggestions = []
     clearTimeout(typingTimer)
     lastPing = 0 // so typing again right after a send re-pings immediately
-    setTyping(scope, identity, false)
+    setTyping(roomId, scope, identity, false)
     requestAnimationFrame(autogrow)
   }
 </script>
