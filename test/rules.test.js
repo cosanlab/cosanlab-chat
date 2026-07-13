@@ -36,11 +36,18 @@ async function seed() {
           },
           messages: { m1: { name: 'A', text: 'hi', ts: 1 } },
         },
+        'secret-two': {
+          meta: {
+            name: 'Secret Two', createdAt: 1, locked: false, private: true,
+            invited: { 'other@dartmouth,edu': true },
+          },
+        },
       },
       roomsIndex: {
         'open-room': { name: 'Open', private: false, locked: false, createdAt: 1, lastActivityAt: 1 },
         'locked-room': { name: 'Done', private: false, locked: true, createdAt: 1, lastActivityAt: 1 },
         'secret-room': { name: 'Secret', private: true, locked: false, createdAt: 1, lastActivityAt: 1 },
+        'secret-two': { name: 'Secret Two', private: true, locked: false, createdAt: 1, lastActivityAt: 1 },
       },
     })
   })
@@ -79,6 +86,16 @@ describe('public rooms', () => {
   })
   it('rejects extra fields', () =>
     assertFails(set(ref(dbAs(null), 'rooms/open-room/messages/mD'), { ...msg, evil: 1 })))
+  it('no writes to a nonexistent (ghost) room', () =>
+    assertFails(set(ref(dbAs(null), 'rooms/ghost-room/messages/mG'), msg)))
+  it('locked room rejects reactions and typing too', async () => {
+    await assertFails(set(ref(dbAs(null), 'rooms/locked-room/reactions/m1/1F600/c1'), 'Anon'))
+    await assertFails(set(ref(dbAs(null), 'rooms/locked-room/typing/main/c1'), { name: 'Anon', ts: 1 }))
+  })
+  it('rejects junk shapes: presence missing name, typing with extra field', async () => {
+    await assertFails(set(ref(dbAs(null), 'rooms/open-room/presence/c1'), { ts: 1 }))
+    await assertFails(set(ref(dbAs(null), 'rooms/open-room/typing/main/c1'), { name: 'Anon', ts: 1, evil: 1 }))
+  })
 })
 
 describe('private rooms', () => {
@@ -86,14 +103,32 @@ describe('private rooms', () => {
     assertFails(get(ref(dbAs(null), 'rooms/secret-room/messages'))))
   it('uninvited (but signed-in) cannot read', () =>
     assertFails(get(ref(dbAs({ email: 'rando@x.com', email_verified: true }), 'rooms/secret-room/messages'))))
-  it('invitee reads and posts', async () => {
+  it('invitee reads and posts (multi-path send shape bumps lastActivityAt)', async () => {
     await assertSucceeds(get(ref(dbAs(INVITEE), 'rooms/secret-room/messages')))
-    await assertSucceeds(set(ref(dbAs(INVITEE), 'rooms/secret-room/messages/mE'), msg))
+    await assertSucceeds(
+      update(ref(dbAs(INVITEE)), {
+        'rooms/secret-room/messages/mE': msg,
+        'roomsIndex/secret-room/lastActivityAt': 333,
+      }),
+    )
   })
   it('unverified email is not enough', () =>
     assertFails(get(ref(dbAs({ email: 'student@dartmouth.edu', email_verified: false }), 'rooms/secret-room/messages'))))
   it('multi-dot invitee email reads (rules replace() matches ALL dots, like client encodeEmail)', () =>
     assertSucceeds(get(ref(dbAs(MULTI_DOT_INVITEE), 'rooms/secret-room/messages'))))
+  it('unauthenticated cannot write messages or reactions', async () => {
+    await assertFails(set(ref(dbAs(null), 'rooms/secret-room/messages/mF'), msg))
+    await assertFails(set(ref(dbAs(null), 'rooms/secret-room/reactions/m1/1F600/c1'), 'Anon'))
+  })
+  it('uninvited (but signed-in) cannot write messages or reactions', async () => {
+    const rando = { email: 'rando@x.com', email_verified: true }
+    await assertFails(set(ref(dbAs(rando), 'rooms/secret-room/messages/mF'), msg))
+    await assertFails(set(ref(dbAs(rando), 'rooms/secret-room/reactions/m1/1F600/c1'), 'Rando'))
+  })
+  it('cross-room isolation: secret-room invitee cannot write in secret-two', () =>
+    assertFails(set(ref(dbAs(INVITEE), 'rooms/secret-two/messages/mX'), msg)))
+  it('outsiders cannot bump a private room lastActivityAt', () =>
+    assertFails(set(ref(dbAs(null), 'roomsIndex/secret-room/lastActivityAt'), 999)))
 })
 
 describe('admin powers', () => {

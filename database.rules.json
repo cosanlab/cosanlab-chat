@@ -7,7 +7,7 @@
         ".read": "data.child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true)",
         "messages": {
           "$msgId": {
-            ".write": "!data.exists() && newData.exists() && root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
+            ".write": "root.child('rooms').child($roomId).child('meta').exists() && !data.exists() && newData.exists() && root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
             ".validate": "newData.hasChildren(['name','text','ts'])",
             "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
             "text": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500" },
@@ -20,7 +20,7 @@
           "$msgId": {
             "$emoji": {
               "$clientId": {
-                ".write": "root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
+                ".write": "root.child('rooms').child($roomId).child('meta').exists() && root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
                 ".validate": "newData.isString() && newData.val().length <= 30"
               }
             }
@@ -29,7 +29,7 @@
         "typing": {
           "$scope": {
             "$clientId": {
-              ".write": "root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
+              ".write": "root.child('rooms').child($roomId).child('meta').exists() && root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
               ".validate": "newData.hasChildren(['name','ts'])",
               "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
               "ts": { ".validate": "newData.isNumber()" },
@@ -39,7 +39,7 @@
         },
         "presence": {
           "$clientId": {
-            ".write": "root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
+            ".write": "root.child('rooms').child($roomId).child('meta').exists() && root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
             ".validate": "newData.hasChildren(['name','ts'])",
             "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
             "ts": { ".validate": "newData.isNumber()" },
@@ -53,7 +53,7 @@
       ".write": "auth != null && auth.token.email_verified == true && root.child('config/adminEmails').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
       "$roomId": {
         "lastActivityAt": {
-          ".write": "root.child('rooms').child($roomId).child('meta').exists() && root.child('rooms').child($roomId).child('meta/locked').val() != true && newData.isNumber()"
+          ".write": "root.child('rooms').child($roomId).child('meta').exists() && root.child('rooms').child($roomId).child('meta/locked').val() != true && newData.isNumber() && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))"
         }
       }
     },
