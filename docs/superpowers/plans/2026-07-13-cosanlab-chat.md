@@ -56,22 +56,29 @@ Replace the `@theme` hex values (names stay identical) and delete the Monas `@fo
 
 ```css
 @theme {
-  /* cosanlab neutral: dark slate + teal/sky */
-  --color-night: #0a1120;
-  --color-surface: #131c31;
-  --color-surface-2: #1c2a47;
-  --color-mist: #9fb0cc;
-  --color-own: #0ea5e9;      /* sky-500 — own bubble */
-  --color-other: #7dd3fc;    /* sky-300 — others' bubbles (dark text) */
-  --color-accent: #14b8a6;   /* teal-500 */
-  --color-accent-hot: #0ea5e9;
+  /* COSAN Lab brand blues, sampled from the lab's gem logo
+     (cosanlab.com/static/img/cosanlab_sticker_trans_small.png) */
+  --color-night: #060c26;    /* deepened logo navy — app background */
+  --color-surface: #101d3f;
+  --color-surface-2: #1a2b55;
+  --color-mist: #9db4cc;
+  --color-own: #0a6aa6;      /* brand blue (#006098, brightened) — own bubble */
+  --color-other: #a8d8e8;    /* light logo blue — others' bubbles (navy text) */
+  --color-accent: #48a0c8;   /* logo mid blue */
+  --color-accent-hot: #70c0d8;
   --color-blush: #fb7185;    /* rose-400 — errors */
-  --color-petal: #99f6e4;    /* teal-200 — decoration */
-  --color-card: #0e1628;
+  --color-petal: #d0e8f0;    /* logo pale ice — decoration */
+  --color-card: #0a1430;
 }
 ```
 
-Also in `src/components/MessageBubble.svelte` the others'-bubble text colors are hardcoded violet (`text-[#3b0764]`, `text-[#6d28d9]`): change both to `text-[#082f49]` (sky-950).
+Also in `src/components/MessageBubble.svelte` the others'-bubble text colors are hardcoded violet (`text-[#3b0764]`, `text-[#6d28d9]`): change both to `text-[#081030]` (logo navy).
+
+Download the lab logo into the app (used by Task 8's screens):
+
+```bash
+curl -s -o public/img/cosanlab-sticker.png https://cosanlab.com/static/img/cosanlab_sticker_trans_small.png
+```
 
 - [ ] **Step 4: Update `package.json` name and `index.html` title**
 
@@ -918,7 +925,7 @@ export function onRoomMeta(roomId, cb, onDenied = () => {}) {
 
 <main class="flex flex-col items-center min-h-dvh px-6 py-16">
   <div class="w-full max-w-md text-center">
-    <p class="text-5xl mb-4">💬</p>
+    <img src="/img/cosanlab-sticker.png" alt="COSAN Lab" class="mx-auto mb-4 h-16 w-auto" />
     <h1 class="text-4xl font-bold text-accent">cosanlab chat</h1>
     <p class="mt-2 text-mist">Real-time chat for COSAN Lab events and courses.</p>
 
@@ -1028,7 +1035,7 @@ export function onRoomMeta(roomId, cb, onDenied = () => {}) {
 {:else if identity.name === null}
   <main class="flex flex-col items-center justify-center min-h-dvh px-6 text-center">
     <div class="w-full max-w-sm">
-      <p class="text-5xl mb-4">💬</p>
+      <img src="/img/cosanlab-sticker.png" alt="COSAN Lab" class="mx-auto mb-4 h-16 w-auto" />
       <h1 class="text-4xl font-bold text-accent">{meta.name}</h1>
       <p class="mt-2 text-xs uppercase tracking-[0.2em] text-mist/80">cosanlab chat</p>
       <form onsubmit={join} class="mt-8 flex flex-col gap-3">
