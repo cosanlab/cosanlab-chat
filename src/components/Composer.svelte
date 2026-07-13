@@ -14,12 +14,23 @@
     autofocus = false,
     mentionNames = [],
     disabled = false,
+    lockedTestid = 'composer-locked',
   } = $props()
 
   let text = $state('')
   let inputEl = $state(null)
   let typingTimer
   let lastPing = 0
+
+  // A lock can land mid-session with a typing timeout still pending — its
+  // setTyping(false) would be a rules-denied write. Kill the timer and reset
+  // the throttle so nothing fires after the room locks.
+  $effect(() => {
+    if (disabled) {
+      clearTimeout(typingTimer)
+      lastPing = 0
+    }
+  })
 
   // Focus the composer on desktop only — on phones this would pop the
   // keyboard over half the screen before the reader has seen the room.
@@ -159,7 +170,7 @@
      and :name: autocompletes. Reactions get their own picker per message. -->
 <div class="relative px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
   {#if disabled}
-    <div class="px-4 py-3 text-center text-sm text-mist" data-testid="composer-locked">
+    <div class="px-4 py-3 text-center text-sm text-mist" data-testid={lockedTestid}>
       This room is locked.
     </div>
   {:else}

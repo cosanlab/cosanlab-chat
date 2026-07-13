@@ -54,11 +54,13 @@ export function onReactions(roomId, cb) {
 
 export function setTyping(roomId, scope, { clientId, name }, isTyping) {
   const node = ref(db, roomPath(roomId, 'typing', scope, clientId))
+  // typing is best-effort: a lock can land between check and write; losing an
+  // indicator is fine, an unhandled rejection is not
   if (isTyping) {
     onDisconnect(node).remove()
-    return set(node, { name, ts: serverTimestamp() })
+    return set(node, { name, ts: serverTimestamp() }).catch(() => {})
   }
-  return remove(node)
+  return remove(node).catch(() => {})
 }
 
 export function onTyping(roomId, scope, cb) {

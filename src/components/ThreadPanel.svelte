@@ -102,5 +102,6 @@
     onSend={send}
     mentionNames={knownNames}
     {disabled}
+    lockedTestid="composer-locked-thread"
   />
 </div>
