@@ -25,4 +25,19 @@ describe('extractImageUrls', () => {
     expect(extractImageUrls('')).toEqual([])
     expect(extractImageUrls(null)).toEqual([])
   })
+  it('does not truncate non-image urls into fabricated image urls', () => {
+    expect(
+      extractImageUrls('https://safe.com/click?redirect=https://evil.com/x.png/steal'),
+    ).toEqual([])
+    expect(extractImageUrls('https://evil.com/a.png/b.html')).toEqual([])
+  })
+  it('stops at quotes so extracted urls never contain them', () =>
+    expect(extractImageUrls("https://x.com/a.png'onerror='alert(1)")).toEqual([
+      'https://x.com/a.png',
+    ]))
+  it('still finds multiple urls in one message', () =>
+    expect(extractImageUrls('https://a.com/1.png and https://b.com/2.jpg?w=5')).toEqual([
+      'https://a.com/1.png',
+      'https://b.com/2.jpg?w=5',
+    ]))
 })

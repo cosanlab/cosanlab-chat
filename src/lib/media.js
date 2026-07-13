@@ -1,5 +1,7 @@
 // meme unfurling is URL-based (Spark plan: no Storage uploads).
-const IMG_RE = /https:\/\/[^\s<>"]+\.(?:png|jpe?g|gif|webp)(?:\?[^\s<>"]*)?/gi
+// Anchored to the token end so a non-image URL can never be truncated into a
+// fabricated image URL; quotes excluded since results land in HTML attributes.
+const IMG_RE = /https:\/\/[^\s<>"']+?\.(?:png|jpe?g|gif|webp)(?:\?[^\s<>"']*)?(?=[\s<>"']|$)/gi
 
 export function extractImageUrls(text) {
   if (!text) return []
