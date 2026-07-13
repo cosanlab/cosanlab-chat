@@ -140,7 +140,7 @@
     class="flex flex-col h-full max-w-xl mx-auto bg-card sm:rounded-2xl sm:ring-1 sm:ring-white/10 sm:shadow-2xl sm:shadow-accent/10 overflow-hidden"
   >
     <header class="relative px-4 py-2.5 bg-surface border-b border-white/5">
-      <h1 class="text-xl leading-6 text-accent" style="font-family: 'Monas', 'American Typewriter', serif">
+      <h1 class="text-xl leading-6 text-accent">
         {meta.name}
       </h1>
       <p class="text-xs text-mist flex items-center gap-1.5">

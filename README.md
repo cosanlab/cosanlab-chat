@@ -90,7 +90,7 @@ npm install
 npm run dev
 
 # Option B: fully offline against the emulators — no live traffic
-firebase emulators:start --only database,auth --project demo-cosanlab
+npx firebase emulators:start --only database,auth --project demo-cosanlab
 VITE_USE_EMULATOR=true npm run dev
 
 npm test             # Vitest unit tests (65): routing, keys, media, derive, …

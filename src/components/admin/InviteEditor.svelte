@@ -19,7 +19,7 @@
     e.preventDefault()
     inviteError = ''
     const email = draft.trim().toLowerCase()
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { inviteError = 'that doesn’t look like an email'; return }
     try {
       await addInvite(roomId, email)
       draft = ''

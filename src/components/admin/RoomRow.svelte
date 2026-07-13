@@ -4,8 +4,9 @@
   import { downloadJson } from '../../lib/download.js'
   import InviteEditor from './InviteEditor.svelte'
   import ConfirmDialog from './ConfirmDialog.svelte'
-  let { roomId, entry, presence } = $props()
-  let expanded = $state(false)
+  let { roomId, entry, presence, expandInitially = false } = $props()
+  // svelte-ignore state_referenced_locally -- intentional: only the initial value matters
+  let expanded = $state(expandInitially)
   let copied = $state(false)
   let confirming = $state(null)
   let actionError = $state('')

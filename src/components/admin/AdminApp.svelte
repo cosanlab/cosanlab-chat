@@ -48,6 +48,8 @@
     sortRooms(index, Object.fromEntries(Object.entries(presence).map(([id, p]) => [id, p.count]))),
   )
 
+  let autoExpandId = $state(null)
+
   let adminEmails = $state([])
   let adminDraft = $state('')
   let headerError = $state('')
@@ -56,7 +58,7 @@
   async function addAdminSubmit(e) {
     e.preventDefault()
     headerError = ''
-    if (!adminDraft.includes('@')) return
+    if (!adminDraft.includes('@')) { headerError = 'that doesn’t look like an email'; return }
     try {
       await addAdmin(adminDraft)
       adminDraft = ''
@@ -100,7 +102,7 @@
       </button>
     </header>
 
-    <CreateRoomForm oncreated={() => {}} />
+    <CreateRoomForm oncreated={(id) => (autoExpandId = id)} />
 
     <details class="mt-4 rounded-xl bg-surface px-4 py-3">
       <summary class="cursor-pointer text-sm text-mist">admins & export</summary>
@@ -130,7 +132,8 @@
 
     <div class="mt-4 flex flex-col gap-2" data-testid="room-table">
       {#each rows as [roomId, entry] (roomId)}
-        <RoomRow {roomId} {entry} presence={presence[roomId] ?? { count: 0, names: [] }} />
+        <RoomRow {roomId} {entry} presence={presence[roomId] ?? { count: 0, names: [] }}
+                 expandInitially={autoExpandId === roomId} />
       {/each}
       {#if !rows.length}<p class="text-mist text-center py-8">No rooms yet.</p>{/if}
     </div>
