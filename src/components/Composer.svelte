@@ -6,18 +6,31 @@
   import { mentionQuery, searchNames } from '../lib/mentions.js'
 
   let {
+    roomId,
     identity,
     scope,
-    placeholder = 'Say something nice…',
+    placeholder = 'Message — paste an image link to share memes',
     onSend,
     autofocus = false,
     mentionNames = [],
+    disabled = false,
+    lockedTestid = 'composer-locked',
   } = $props()
 
   let text = $state('')
   let inputEl = $state(null)
   let typingTimer
   let lastPing = 0
+
+  // A lock can land mid-session with a typing timeout still pending — its
+  // setTyping(false) would be a rules-denied write. Kill the timer and reset
+  // the throttle so nothing fires after the room locks.
+  $effect(() => {
+    if (disabled) {
+      clearTimeout(typingTimer)
+      lastPing = 0
+    }
+  })
 
   // Focus the composer on desktop only — on phones this would pop the
   // keyboard over half the screen before the reader has seen the room.
@@ -29,15 +42,16 @@
   // instead of vanishing instantly. Writes are throttled to one refresh per
   // 1.5 s so an audience of typers doesn't hammer the database per keystroke.
   function pingTyping() {
+    if (disabled) return
     const now = Date.now()
     if (now - lastPing > 1500) {
       lastPing = now
-      setTyping(scope, identity, true)
+      setTyping(roomId, scope, identity, true)
     }
     clearTimeout(typingTimer)
     typingTimer = setTimeout(() => {
       lastPing = 0
-      setTyping(scope, identity, false)
+      setTyping(roomId, scope, identity, false)
     }, 3000)
   }
 
@@ -139,6 +153,7 @@
 
   function submit(e) {
     e?.preventDefault()
+    if (disabled) return
     const clean = text.trim()
     if (!clean) return
     onSend(clean)
@@ -146,7 +161,7 @@
     suggestions = []
     clearTimeout(typingTimer)
     lastPing = 0 // so typing again right after a send re-pings immediately
-    setTyping(scope, identity, false)
+    setTyping(roomId, scope, identity, false)
     requestAnimationFrame(autogrow)
   }
 </script>
@@ -154,6 +169,11 @@
 <!-- No emoji button: phones have native emoji keyboards, macOS has ⌃⌘Space,
      and :name: autocompletes. Reactions get their own picker per message. -->
 <div class="relative px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
+  {#if disabled}
+    <div class="px-4 py-3 text-center text-sm text-mist" data-testid={lockedTestid}>
+      This room is locked.
+    </div>
+  {:else}
   {#if suggestions.length > 0}
     <div
       class="absolute bottom-full left-3 right-3 mb-1 rounded-xl bg-surface-2 shadow-xl ring-1 ring-white/10 overflow-hidden"
@@ -207,4 +227,5 @@
       </svg>
     </button>
   </form>
+  {/if}
 </div>

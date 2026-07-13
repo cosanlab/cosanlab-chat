@@ -56,22 +56,29 @@ Replace the `@theme` hex values (names stay identical) and delete the Monas `@fo
 
 ```css
 @theme {
-  /* cosanlab neutral: dark slate + teal/sky */
-  --color-night: #0a1120;
-  --color-surface: #131c31;
-  --color-surface-2: #1c2a47;
-  --color-mist: #9fb0cc;
-  --color-own: #0ea5e9;      /* sky-500 — own bubble */
-  --color-other: #7dd3fc;    /* sky-300 — others' bubbles (dark text) */
-  --color-accent: #14b8a6;   /* teal-500 */
-  --color-accent-hot: #0ea5e9;
+  /* COSAN Lab brand blues, sampled from the lab's gem logo
+     (cosanlab.com/static/img/cosanlab_sticker_trans_small.png) */
+  --color-night: #060c26;    /* deepened logo navy — app background */
+  --color-surface: #101d3f;
+  --color-surface-2: #1a2b55;
+  --color-mist: #9db4cc;
+  --color-own: #0a6aa6;      /* brand blue (#006098, brightened) — own bubble */
+  --color-other: #a8d8e8;    /* light logo blue — others' bubbles (navy text) */
+  --color-accent: #48a0c8;   /* logo mid blue */
+  --color-accent-hot: #70c0d8;
   --color-blush: #fb7185;    /* rose-400 — errors */
-  --color-petal: #99f6e4;    /* teal-200 — decoration */
-  --color-card: #0e1628;
+  --color-petal: #d0e8f0;    /* logo pale ice — decoration */
+  --color-card: #0a1430;
 }
 ```
 
-Also in `src/components/MessageBubble.svelte` the others'-bubble text colors are hardcoded violet (`text-[#3b0764]`, `text-[#6d28d9]`): change both to `text-[#082f49]` (sky-950).
+Also in `src/components/MessageBubble.svelte` the others'-bubble text colors are hardcoded violet (`text-[#3b0764]`, `text-[#6d28d9]`): change both to `text-[#081030]` (logo navy).
+
+Download the lab logo into the app (used by Task 8's screens):
+
+```bash
+curl -s -o public/img/cosanlab-sticker.png https://cosanlab.com/static/img/cosanlab_sticker_trans_small.png
+```
 
 - [ ] **Step 4: Update `package.json` name and `index.html` title**
 
@@ -601,7 +608,7 @@ git commit -m "feat: firebase auth instance, magic-link helpers, emulator wiring
 - [ ] **Step 1: Write `database.rules.json`**
 
 The admin check appears inlined everywhere (rules JSON has no functions):
-`auth != null && auth.token.email_verified == true && root.child('config/adminEmails').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true` — abbreviated below as `<ADMIN>`; the invited check `auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true` as `<INVITED>`; `root.child('rooms').child($roomId).child('meta/locked').val() != true` as `<UNLOCKED>`; `root.child('rooms').child($roomId).child('meta/private').val() != true` as `<PUBLIC>`. **Write the file with every occurrence fully expanded — no placeholders in the actual JSON.**
+`auth != null && auth.token.email_verified == true && root.child('config/adminEmails').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true` — abbreviated below as `<ADMIN>`; the invited check `auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true` as `<INVITED>`; `root.child('rooms').child($roomId).child('meta').exists() && root.child('rooms').child($roomId).child('meta/locked').val() != true` as `<UNLOCKED>` (the `meta.exists()` clause blocks "ghost rooms" — without it, locked/private checks are vacuously true for rooms nobody created, letting anonymous clients spam storage under arbitrary room ids); `root.child('rooms').child($roomId).child('meta/private').val() != true` as `<PUBLIC>`. The `lastActivityAt` write rule additionally requires `(<PUBLIC> || <INVITED>)` so outsiders cannot bump a private room's world-readable activity stamp — "writable by whoever can post" means exactly that. **Write the file with every occurrence fully expanded — no placeholders in the actual JSON.**
 
 ```json
 {
@@ -918,7 +925,7 @@ export function onRoomMeta(roomId, cb, onDenied = () => {}) {
 
 <main class="flex flex-col items-center min-h-dvh px-6 py-16">
   <div class="w-full max-w-md text-center">
-    <p class="text-5xl mb-4">💬</p>
+    <img src="/img/cosanlab-sticker.png" alt="COSAN Lab" class="mx-auto mb-4 h-16 w-auto" />
     <h1 class="text-4xl font-bold text-accent">cosanlab chat</h1>
     <p class="mt-2 text-mist">Real-time chat for COSAN Lab events and courses.</p>
 
@@ -975,8 +982,7 @@ export function onRoomMeta(roomId, cb, onDenied = () => {}) {
   })
 
   let user = $state(null) // {uid, email} | null
-  let authReady = $state(false)
-  $effect(() => onAuth((u) => { user = u; authReady = true }))
+  $effect(() => onAuth((u) => (user = u)))
   $effect(() => { completeMagicLink().catch((e) => console.error('magic link', e)) })
 
   // Room gate state. meta === undefined → still loading; null → no such room
@@ -985,6 +991,7 @@ export function onRoomMeta(roomId, cb, onDenied = () => {}) {
   let denied = $state(false)
   $effect(() => {
     if (route.view !== 'room') return
+    void user // tracked dep: RTDB cancels denied listeners; re-subscribe on auth changes
     meta = undefined
     denied = false
     return onRoomMeta(route.roomId, (m) => { meta = m; denied = false }, () => (denied = true))
@@ -1028,7 +1035,7 @@ export function onRoomMeta(roomId, cb, onDenied = () => {}) {
 {:else if identity.name === null}
   <main class="flex flex-col items-center justify-center min-h-dvh px-6 text-center">
     <div class="w-full max-w-sm">
-      <p class="text-5xl mb-4">💬</p>
+      <img src="/img/cosanlab-sticker.png" alt="COSAN Lab" class="mx-auto mb-4 h-16 w-auto" />
       <h1 class="text-4xl font-bold text-accent">{meta.name}</h1>
       <p class="mt-2 text-xs uppercase tracking-[0.2em] text-mist/80">cosanlab chat</p>
       <form onsubmit={join} class="mt-8 flex flex-col gap-3">
@@ -1051,9 +1058,18 @@ export function onRoomMeta(roomId, cb, onDenied = () => {}) {
     </div>
   </main>
 {:else}
-  <Room {identity} roomId={route.roomId} {meta} />
+  {#key route.roomId}
+    <Room {identity} roomId={route.roomId} {meta} />
+  {/key}
 {/if}
 ```
+
+The `{#key route.roomId}` block is load-bearing, not decorative: `Room.svelte`'s
+`$effect` subscriptions (`onMessages`/`onReactions`/`onTyping`) return no cleanup
+and `joinPresence` arms `onDisconnect` on the old room's node — navigating
+between rooms without a full remount would leak the old room's listeners and
+leave a ghost presence entry. `{#key}` destroys and recreates `Room` on every
+room change, tearing down all effects.
 
 Create a stub `src/components/EmailGate.svelte` so the build passes (Task 9 fills it):
 
@@ -1185,12 +1201,25 @@ Where the header currently renders the fixed wordmark, render `{meta.name}` inst
 {/if}
 ```
 
-Gate the write-side effects so a locked/archived room never attempts denied writes (presence/typing writes would fail rules):
+Gate the write-side effects so a locked/archived room never attempts denied writes (presence/typing writes would fail rules), and make leaving a room remove the presence entry (without this, navigating away leaves a ghost "here now" entry until the tab disconnects). First change `joinPresence` in `src/lib/chat.js` to return a leave function:
+
+```js
+export function joinPresence(roomId, { clientId, name }) {
+  const node = ref(db, roomPath(roomId, 'presence', clientId))
+  onDisconnect(node).remove()
+  set(node, { name, ts: serverTimestamp() })
+  return () => remove(node) // leave(): called on unmount/room switch
+}
+```
+
+Then in `Room.svelte`, merge the presence effect so teardown both leaves and unsubscribes:
 
 ```svelte
 $effect(() => {
-  if (meta.locked) return
-  joinPresence(roomId, identity)
+  if (meta.locked) return onPresence(roomId, (p) => { hereCount = p.count; presentNames = p.names })
+  const leave = joinPresence(roomId, identity)
+  const unsub = onPresence(roomId, (p) => { hereCount = p.count; presentNames = p.names })
+  return () => { leave(); unsub() }
 })
 ```
 

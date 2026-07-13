@@ -5,5 +5,6 @@ dist/
 .DS_Store
 .firebase/
 firebase-debug.log
+database-debug.log
 test-results/
 playwright-report/

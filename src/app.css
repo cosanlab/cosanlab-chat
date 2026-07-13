@@ -1,25 +1,19 @@
 @import 'tailwindcss';
 
-/* Monas — the header face from wasita.space, for the "xoxo wasita" wordmark */
-@font-face {
-  font-family: 'Monas';
-  src: url('/fonts/monas.woff2') format('woff2');
-  font-display: swap;
-}
-
 @theme {
-  /* Wasita's palette (from shared-reality-chat), dark-mode remix */
-  --color-night: #0f0a1a; /* app background: near-black violet */
-  --color-surface: #1b1230; /* cards, composer, thread panel */
-  --color-surface-2: #251a40; /* hover / raised surfaces */
-  --color-mist: #b4a8cc; /* muted text on dark */
-  --color-own: #6366f1; /* indigo-500 — own message bubble */
-  --color-other: #e879f9; /* fuchsia-400 — others' bubbles */
-  --color-accent: #8b5cf6; /* violet-500 */
-  --color-accent-hot: #d946ef; /* fuchsia-500 */
-  --color-blush: #f472b6; /* pink-400 */
-  --color-petal: #f9a8d4; /* light pink — decoration only */
-  --color-card: #151022; /* chat column, slightly raised off the page bg */
+  /* COSAN Lab brand blues, sampled from the lab's gem logo
+     (cosanlab.com/static/img/cosanlab_sticker_trans_small.png) */
+  --color-night: #060c26;    /* deepened logo navy — app background */
+  --color-surface: #101d3f;
+  --color-surface-2: #1a2b55;
+  --color-mist: #9db4cc;
+  --color-own: #0a6aa6;      /* brand blue (#006098, brightened) — own bubble */
+  --color-other: #a8d8e8;    /* light logo blue — others' bubbles (navy text) */
+  --color-accent: #48a0c8;   /* logo mid blue */
+  --color-accent-hot: #70c0d8;
+  --color-blush: #fb7185;    /* rose-400 — errors */
+  --color-petal: #d0e8f0;    /* logo pale ice — decoration */
+  --color-card: #0a1430;
 }
 
 /* Touch screens have no hover: keep the message action icons visible */

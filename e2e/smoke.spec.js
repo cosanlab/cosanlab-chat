@@ -1,19 +1,16 @@
 import { test, expect } from '@playwright/test'
+import { seedRoom, wipeDb, join } from './helpers.js'
 
-// Runs against the LIVE dev database (rules are append-only, no cleanup);
-// every assertion targets this run's unique strings so runs don't collide.
-const nonce = Date.now().toString(36)
-const nameA = `TestA-${nonce}`
-const nameB = `TestB-${nonce}`
-const msgText = `hello from A ${nonce}`
-const replyText = `thread reply ${nonce}`
+const nameA = 'TestA'
+const nameB = 'TestB'
+const msgText = 'hello from A'
+// Not a substring of the panel header "Thread replying to …" (strict mode)
+const replyText = 'a reply from B'
 
-async function join(page, name) {
-  await page.goto('/')
-  await page.getByTestId('name-input').fill(name)
-  await page.getByTestId('join-button').click()
-  await expect(page.getByTestId('composer-input')).toBeVisible()
-}
+test.beforeAll(async () => {
+  await wipeDb()
+  await seedRoom('lobby', { name: 'Lobby' })
+})
 
 test('two users chat, react, thread, and see typing', async ({ browser }) => {
   const ctxA = await browser.newContext()
@@ -21,8 +18,8 @@ test('two users chat, react, thread, and see typing', async ({ browser }) => {
   const a = await ctxA.newPage()
   const b = await ctxB.newPage()
 
-  await join(a, nameA)
-  await join(b, nameB)
+  await join(a, '/lobby', nameA)
+  await join(b, '/lobby', nameB)
 
   // A sends; both sides see it
   await a.getByTestId('composer-input').fill(msgText)

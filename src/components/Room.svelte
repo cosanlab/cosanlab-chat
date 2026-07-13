@@ -17,7 +17,7 @@
   import { topLevel, replyCounts, typingLabel, groupReactions, sameGroup } from '../lib/derive.js'
   import { isOwnMessage } from '../lib/identity.js'
 
-  let { identity } = $props()
+  let { identity, roomId, meta } = $props()
 
   let messages = $state([])
   let reactionsRaw = $state({})
@@ -27,16 +27,26 @@
   let hereCount = $state(0)
   let presentNames = $state([])
 
-  $effect(() => onMessages((m) => messages.push(m)))
-  $effect(() => onReactions((r) => (reactionsRaw = r)))
-  $effect(() => onTyping('main', (entries) => (typing = entries)))
+  $effect(() => onMessages(roomId, (m) => messages.push(m)))
+  $effect(() => onReactions(roomId, (r) => (reactionsRaw = r)))
+  $effect(() => onTyping(roomId, 'main', (entries) => (typing = entries)))
   $effect(() => onConnected((c) => (connected = c)))
   $effect(() => {
-    joinPresence(identity)
-    return onPresence((p) => {
+    if (meta.locked) {
+      return onPresence(roomId, (p) => {
+        hereCount = p.count
+        presentNames = p.names
+      })
+    }
+    const leave = joinPresence(roomId, identity)
+    const unsub = onPresence(roomId, (p) => {
       hereCount = p.count
       presentNames = p.names
     })
+    return () => {
+      leave()
+      unsub()
+    }
   })
 
   // everyone mentionable: currently present + anyone who has posted
@@ -61,7 +71,7 @@
     const mine = groupReactions(reactionsRaw[msgId], identity.clientId).find(
       (r) => r.emoji === emoji,
     )?.mine
-    toggleReaction(msgId, emoji, identity, !!mine)
+    toggleReaction(roomId, msgId, emoji, identity, !!mine)
   }
 
   // --- auto-scroll: stay pinned to the bottom unless the reader scrolled up
@@ -118,7 +128,7 @@
   }
 
   function sendMain(text) {
-    sendMessage({ name: identity.name, text })
+    sendMessage(roomId, { name: identity.name, text })
     jumpToLatest() // your own message always brings you back to the bottom
   }
 </script>
@@ -130,8 +140,8 @@
     class="flex flex-col h-full max-w-xl mx-auto bg-card sm:rounded-2xl sm:ring-1 sm:ring-white/10 sm:shadow-2xl sm:shadow-accent/10 overflow-hidden"
   >
     <header class="relative px-4 py-2.5 bg-surface border-b border-white/5">
-      <h1 class="text-xl leading-6 text-accent" style="font-family: 'Monas', 'American Typewriter', serif">
-        xoxo wasita
+      <h1 class="text-xl leading-6 text-accent">
+        {meta.name}
       </h1>
       <p class="text-xs text-mist flex items-center gap-1.5">
         <span class="w-1.5 h-1.5 rounded-full {connected ? 'bg-emerald-400' : 'bg-amber-400'}"></span>
@@ -161,6 +171,12 @@
         </div>
       {/if}
     </header>
+
+    {#if meta.locked}
+      <div class="bg-surface-2 text-mist text-sm text-center py-2 px-4" data-testid="locked-banner">
+        🔒 This room is locked — you’re viewing the archive.
+      </div>
+    {/if}
 
     <div class="relative flex-1 min-h-0">
       <div
@@ -200,12 +216,21 @@
     </div>
 
     <TypingDots {label} />
-    <Composer {identity} scope="main" onSend={sendMain} autofocus mentionNames={knownNames} />
+    <Composer
+      {roomId}
+      {identity}
+      scope="main"
+      onSend={sendMain}
+      autofocus
+      mentionNames={knownNames}
+      disabled={meta.locked}
+    />
   </main>
 </div>
 
 {#if openParent}
   <ThreadPanel
+    {roomId}
     {identity}
     parent={openParent}
     {messages}
@@ -213,5 +238,6 @@
     {knownNames}
     onToggleReaction={handleToggleReaction}
     onClose={() => (openThreadId = null)}
+    disabled={meta.locked}
   />
 {/if}

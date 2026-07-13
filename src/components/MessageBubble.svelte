@@ -4,6 +4,7 @@
   import { shortTime } from '../lib/time.js'
   import { linkify } from '../lib/derive.js'
   import { tokenizeMentions } from '../lib/mentions.js'
+  import { extractImageUrls } from '../lib/media.js'
 
   let {
     message,
@@ -29,6 +30,10 @@
       ),
   )
 
+  // Extract image URLs from message text
+  let images = $derived(extractImageUrls(message.text))
+  let failedImages = $state({}) // url -> true once its <img> errored
+
   function pick(emoji) {
     showPicker = false
     onToggleReaction(message.id, emoji)
@@ -53,7 +58,7 @@
         {pending ? 'opacity-60' : 'opacity-100'}
         {mine
         ? 'ml-10 bg-own rounded-tl-xl rounded-tr-xl rounded-bl-xl'
-        : 'mr-10 bg-other text-[#3b0764] rounded-tl-xl rounded-tr-xl rounded-br-xl'}"
+        : 'mr-10 bg-other text-[#081030] rounded-tl-xl rounded-tr-xl rounded-br-xl'}"
     >
       {#each linkify(message.text) as part, i (i)}
         {#if part.url}
@@ -68,8 +73,8 @@
             {#if piece.mention}
               <span
                 class="font-bold rounded px-1 {piece.mention.toLowerCase() === selfName.toLowerCase()
-                  ? 'bg-white/90 text-[#6d28d9]'
-                  : mine ? 'bg-white/25' : 'bg-[#3b0764]/15'}"
+                  ? 'bg-white/90 text-[#081030]'
+                  : mine ? 'bg-white/25' : 'bg-[#081030]/15'}"
               >@{piece.mention}</span>
             {:else}{piece.text}{/if}
           {/each}
@@ -77,6 +82,21 @@
       {/each}
     </div>
   </div>
+
+  <!-- Meme unfurling: render extracted images below the bubble -->
+  {#each images.filter((s) => !failedImages[s]) as src (src)}
+    <a href={src} target="_blank" rel="noopener noreferrer" class="block mt-1 max-w-[80%] {mine ? 'ml-auto' : 'mr-auto'}">
+      <img
+        {src}
+        alt=""
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        class="rounded-xl max-h-64 w-auto shadow-md"
+        onerror={() => (failedImages[src] = true)}
+        data-testid="meme-image"
+      />
+    </a>
+  {/each}
 
   <!-- Slack-style hover actions: react + reply icons, floating at the row's corner -->
   <div
