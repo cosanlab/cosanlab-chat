@@ -1058,9 +1058,18 @@ export function onRoomMeta(roomId, cb, onDenied = () => {}) {
     </div>
   </main>
 {:else}
-  <Room {identity} roomId={route.roomId} {meta} />
+  {#key route.roomId}
+    <Room {identity} roomId={route.roomId} {meta} />
+  {/key}
 {/if}
 ```
+
+The `{#key route.roomId}` block is load-bearing, not decorative: `Room.svelte`'s
+`$effect` subscriptions (`onMessages`/`onReactions`/`onTyping`) return no cleanup
+and `joinPresence` arms `onDisconnect` on the old room's node — navigating
+between rooms without a full remount would leak the old room's listeners and
+leave a ghost presence entry. `{#key}` destroys and recreates `Room` on every
+room change, tearing down all effects.
 
 Create a stub `src/components/EmailGate.svelte` so the build passes (Task 9 fills it):
 
@@ -1192,12 +1201,25 @@ Where the header currently renders the fixed wordmark, render `{meta.name}` inst
 {/if}
 ```
 
-Gate the write-side effects so a locked/archived room never attempts denied writes (presence/typing writes would fail rules):
+Gate the write-side effects so a locked/archived room never attempts denied writes (presence/typing writes would fail rules), and make leaving a room remove the presence entry (without this, navigating away leaves a ghost "here now" entry until the tab disconnects). First change `joinPresence` in `src/lib/chat.js` to return a leave function:
+
+```js
+export function joinPresence(roomId, { clientId, name }) {
+  const node = ref(db, roomPath(roomId, 'presence', clientId))
+  onDisconnect(node).remove()
+  set(node, { name, ts: serverTimestamp() })
+  return () => remove(node) // leave(): called on unmount/room switch
+}
+```
+
+Then in `Room.svelte`, merge the presence effect so teardown both leaves and unsubscribes:
 
 ```svelte
 $effect(() => {
-  if (meta.locked) return
-  joinPresence(roomId, identity)
+  if (meta.locked) return onPresence(roomId, (p) => { hereCount = p.count; presentNames = p.names })
+  const leave = joinPresence(roomId, identity)
+  const unsub = onPresence(roomId, (p) => { hereCount = p.count; presentNames = p.names })
+  return () => { leave(); unsub() }
 })
 ```
 
