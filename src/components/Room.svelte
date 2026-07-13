@@ -17,7 +17,7 @@
   import { topLevel, replyCounts, typingLabel, groupReactions, sameGroup } from '../lib/derive.js'
   import { isOwnMessage } from '../lib/identity.js'
 
-  let { identity, roomId } = $props()
+  let { identity, roomId, meta } = $props()
 
   let messages = $state([])
   let reactionsRaw = $state({})
