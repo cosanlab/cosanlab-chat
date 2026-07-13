@@ -32,6 +32,7 @@
 
   // Extract image URLs from message text
   let images = $derived(extractImageUrls(message.text))
+  let failedImages = $state({}) // url -> true once its <img> errored
 
   function pick(emoji) {
     showPicker = false
@@ -83,15 +84,15 @@
   </div>
 
   <!-- Meme unfurling: render extracted images below the bubble -->
-  {#each images as src (src)}
+  {#each images.filter((s) => !failedImages[s]) as src (src)}
     <a href={src} target="_blank" rel="noopener noreferrer" class="block mt-1 max-w-[80%] {mine ? 'ml-auto' : 'mr-auto'}">
       <img
         {src}
-        alt="shared image"
+        alt=""
         loading="lazy"
         referrerpolicy="no-referrer"
         class="rounded-xl max-h-64 w-auto shadow-md"
-        onerror={(e) => e.currentTarget.parentElement.remove()}
+        onerror={() => (failedImages[src] = true)}
         data-testid="meme-image"
       />
     </a>
