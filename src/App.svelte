@@ -24,15 +24,10 @@
   <main class="flex flex-col items-center justify-center min-h-dvh px-6 text-center">
     <div class="w-full max-w-sm">
       <p class="text-5xl mb-4">💬</p>
-      <h1 class="text-5xl text-accent" style="font-family: 'Monas', 'American Typewriter', serif">
-        xoxo wasita
+      <h1 class="text-5xl text-accent">
+        cosanlab chat
       </h1>
-      <p class="mt-2 text-xs uppercase tracking-[0.2em] text-mist/80">
-        public dissertation defense commentary
-      </p>
-      <p class="mt-4 text-mist">
-        React, comment, and cheer in real time while Wasita gives her talk.
-      </p>
+      <p class="mt-4 text-mist">Real-time chat for COSAN Lab events and courses.</p>
       <form onsubmit={join} class="mt-8 flex flex-col gap-3">
         <input
           class="w-full rounded-xl bg-surface border border-surface-2 px-4 py-3 text-lg placeholder:text-mist/60 focus:outline-none focus:ring-2 focus:ring-accent"

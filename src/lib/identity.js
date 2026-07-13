@@ -2,8 +2,8 @@
 // localStorage so a refresh doesn't re-prompt. clientId is what reaction
 // toggles and typing entries key on; name is display-only.
 
-const CLIENT_KEY = 'defense-chat:clientId'
-const NAME_KEY = 'defense-chat:name'
+const CLIENT_KEY = 'cosanlab-chat:clientId'
+const NAME_KEY = 'cosanlab-chat:name'
 export const NAME_MAX = 30
 
 let storage = typeof localStorage !== 'undefined' ? localStorage : null
@@ -19,7 +19,7 @@ export function _setStorage(s) {
 // "is this bubble mine?" is answered locally: remember the push-ids we sent.
 // Name equality would false-positive on two audience members named Sarah.
 
-const OWN_KEY = 'defense-chat:ownMessages'
+const OWN_KEY = 'cosanlab-chat:ownMessages'
 let ownCache = null
 
 function ownIds() {

@@ -53,7 +53,7 @@
         {pending ? 'opacity-60' : 'opacity-100'}
         {mine
         ? 'ml-10 bg-own rounded-tl-xl rounded-tr-xl rounded-bl-xl'
-        : 'mr-10 bg-other text-[#3b0764] rounded-tl-xl rounded-tr-xl rounded-br-xl'}"
+        : 'mr-10 bg-other text-[#081030] rounded-tl-xl rounded-tr-xl rounded-br-xl'}"
     >
       {#each linkify(message.text) as part, i (i)}
         {#if part.url}
@@ -68,8 +68,8 @@
             {#if piece.mention}
               <span
                 class="font-bold rounded px-1 {piece.mention.toLowerCase() === selfName.toLowerCase()
-                  ? 'bg-white/90 text-[#6d28d9]'
-                  : mine ? 'bg-white/25' : 'bg-[#3b0764]/15'}"
+                  ? 'bg-white/90 text-[#081030]'
+                  : mine ? 'bg-white/25' : 'bg-[#081030]/15'}"
               >@{piece.mention}</span>
             {:else}{piece.text}{/if}
           {/each}
