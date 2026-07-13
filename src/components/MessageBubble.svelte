@@ -4,6 +4,7 @@
   import { shortTime } from '../lib/time.js'
   import { linkify } from '../lib/derive.js'
   import { tokenizeMentions } from '../lib/mentions.js'
+  import { extractImageUrls } from '../lib/media.js'
 
   let {
     message,
@@ -28,6 +29,9 @@
         (p) => p.mention?.toLowerCase() === selfName.toLowerCase(),
       ),
   )
+
+  // Extract image URLs from message text
+  let images = $derived(extractImageUrls(message.text))
 
   function pick(emoji) {
     showPicker = false
@@ -77,6 +81,21 @@
       {/each}
     </div>
   </div>
+
+  <!-- Meme unfurling: render extracted images below the bubble -->
+  {#each images as src (src)}
+    <a href={src} target="_blank" rel="noopener noreferrer" class="block mt-1 max-w-[80%] {mine ? 'ml-auto' : 'mr-auto'}">
+      <img
+        {src}
+        alt="shared image"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        class="rounded-xl max-h-64 w-auto shadow-md"
+        onerror={(e) => e.currentTarget.parentElement.remove()}
+        data-testid="meme-image"
+      />
+    </a>
+  {/each}
 
   <!-- Slack-style hover actions: react + reply icons, floating at the row's corner -->
   <div
