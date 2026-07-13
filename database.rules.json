@@ -1,47 +1,66 @@
 {
   "rules": {
-    ".read": true,
-    ".write": false,
-    "messages": {
-      "$msgId": {
-        ".write": "!data.exists() && newData.exists()",
-        ".validate": "newData.hasChildren(['name','text','ts'])",
-        "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
-        "text": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500" },
-        "ts": { ".validate": "newData.isNumber()" },
-        "parentId": { ".validate": "newData.isString() && newData.val().length <= 100" },
-        "$other": { ".validate": false }
-      }
-    },
-    "reactions": {
-      "$msgId": {
-        "$emoji": {
+    "rooms": {
+      ".read": "auth != null && auth.token.email_verified == true && root.child('config/adminEmails').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
+      ".write": "auth != null && auth.token.email_verified == true && root.child('config/adminEmails').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
+      "$roomId": {
+        ".read": "data.child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true)",
+        "messages": {
+          "$msgId": {
+            ".write": "!data.exists() && newData.exists() && root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
+            ".validate": "newData.hasChildren(['name','text','ts'])",
+            "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
+            "text": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500" },
+            "ts": { ".validate": "newData.isNumber()" },
+            "parentId": { ".validate": "newData.isString() && newData.val().length <= 100" },
+            "$other": { ".validate": false }
+          }
+        },
+        "reactions": {
+          "$msgId": {
+            "$emoji": {
+              "$clientId": {
+                ".write": "root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
+                ".validate": "newData.isString() && newData.val().length <= 30"
+              }
+            }
+          }
+        },
+        "typing": {
+          "$scope": {
+            "$clientId": {
+              ".write": "root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
+              ".validate": "newData.hasChildren(['name','ts'])",
+              "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
+              "ts": { ".validate": "newData.isNumber()" },
+              "$other": { ".validate": false }
+            }
+          }
+        },
+        "presence": {
           "$clientId": {
-            ".write": true,
-            ".validate": "newData.isString() && newData.val().length <= 30"
+            ".write": "root.child('rooms').child($roomId).child('meta/locked').val() != true && (root.child('rooms').child($roomId).child('meta/private').val() != true || (auth != null && auth.token.email_verified == true && root.child('rooms').child($roomId).child('meta/invited').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true))",
+            ".validate": "newData.hasChildren(['name','ts'])",
+            "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
+            "ts": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
           }
         }
       }
     },
-    "presence": {
-      "$clientId": {
-        ".write": true,
-        ".validate": "newData.hasChildren(['name','ts'])",
-        "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
-        "ts": { ".validate": "newData.isNumber()" },
-        "$other": { ".validate": false }
-      }
-    },
-    "typing": {
-      "$scope": {
-        "$clientId": {
-          ".write": true,
-          ".validate": "newData.hasChildren(['name','ts'])",
-          "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
-          "ts": { ".validate": "newData.isNumber()" },
-          "$other": { ".validate": false }
+    "roomsIndex": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email_verified == true && root.child('config/adminEmails').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
+      "$roomId": {
+        "lastActivityAt": {
+          ".write": "root.child('rooms').child($roomId).child('meta').exists() && root.child('rooms').child($roomId).child('meta/locked').val() != true && newData.isNumber()"
         }
       }
+    },
+    "config": {
+      ".read": "auth != null && auth.token.email_verified == true && root.child('config/adminEmails').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
+      ".write": "auth != null && auth.token.email_verified == true && root.child('config/adminEmails').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
+      "adminEmails": { "$email": { ".validate": "newData.val() == true" } }
     }
   }
 }
