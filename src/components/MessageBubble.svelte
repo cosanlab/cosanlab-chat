@@ -4,7 +4,7 @@
   import { shortTime } from '../lib/time.js'
   import { linkify } from '../lib/derive.js'
   import { tokenizeMentions } from '../lib/mentions.js'
-  import { extractImageUrls } from '../lib/media.js'
+  import { extractImageUrls, stripImageUrls } from '../lib/media.js'
   import { spaceBelow, opensUpward, findScrollParent } from '../lib/popover.js'
 
   let {
@@ -36,6 +36,9 @@
   // Extract image URLs from message text
   let images = $derived(extractImageUrls(message.text))
   let failedImages = $state({}) // url -> true once its <img> errored
+  let activeImages = $derived(images.filter((s) => !failedImages[s]))
+  // Unfurled URLs leave the bubble; a failed image puts its URL back.
+  let bubbleText = $derived(stripImageUrls(message.text, activeImages))
 
   function pick(emoji) {
     showPicker = false
@@ -71,6 +74,7 @@
 
   <div class="flex {mine ? 'justify-end' : 'justify-start'}">
     <div class="relative inline-block max-w-[80%] mt-0.5 {mine ? 'ml-16' : 'mr-16'}">
+      {#if bubbleText !== ''}
       <div
         class="px-3 py-1.5 text-white shadow-md break-words whitespace-pre-wrap transition-opacity
           {pending ? 'opacity-60' : 'opacity-100'}
@@ -78,7 +82,7 @@
           ? 'bg-own rounded-tl-xl rounded-tr-xl rounded-bl-xl'
           : 'bg-other text-[#081030] rounded-tl-xl rounded-tr-xl rounded-br-xl'}"
       >
-        {#each linkify(message.text) as part, i (i)}
+        {#each linkify(bubbleText) as part, i (i)}
           {#if part.url}
             <a
               href={part.url}
@@ -99,6 +103,22 @@
           {/if}
         {/each}
       </div>
+      {/if}
+
+      <!-- Meme unfurling: extracted image links render as images, not text -->
+      {#each activeImages as src (src)}
+        <a href={src} target="_blank" rel="noopener noreferrer" class="block mt-1 {mine ? 'ml-auto' : 'mr-auto'} w-fit">
+          <img
+            {src}
+            alt=""
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            class="rounded-xl max-h-64 w-auto shadow-md"
+            onerror={() => (failedImages[src] = true)}
+            data-testid="meme-image"
+          />
+        </a>
+      {/each}
 
       <!-- Hover actions: react + reply icons, beside the bubble's outer edge -->
       <div
@@ -140,21 +160,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Meme unfurling: render extracted images below the bubble -->
-  {#each images.filter((s) => !failedImages[s]) as src (src)}
-    <a href={src} target="_blank" rel="noopener noreferrer" class="block mt-1 max-w-[80%] {mine ? 'ml-auto' : 'mr-auto'}">
-      <img
-        {src}
-        alt=""
-        loading="lazy"
-        referrerpolicy="no-referrer"
-        class="rounded-xl max-h-64 w-auto shadow-md"
-        onerror={() => (failedImages[src] = true)}
-        data-testid="meme-image"
-      />
-    </a>
-  {/each}
 
   {#if showPicker}
     <div
