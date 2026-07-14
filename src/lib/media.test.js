@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { extractImageUrls } from './media.js'
+import { extractImageUrls, stripImageUrls } from './media.js'
 
 describe('extractImageUrls', () => {
   it('finds https image links', () =>
@@ -40,4 +40,40 @@ describe('extractImageUrls', () => {
       'https://a.com/1.png',
       'https://b.com/2.jpg?w=5',
     ]))
+})
+
+describe('stripImageUrls', () => {
+  it('returns empty string for a URL-only message', () => {
+    expect(stripImageUrls('https://a.com/x.gif', ['https://a.com/x.gif'])).toBe('')
+  })
+
+  it('keeps surrounding words and trims the seam', () => {
+    expect(stripImageUrls('behold https://a.com/x.gif', ['https://a.com/x.gif'])).toBe('behold')
+    expect(stripImageUrls('https://a.com/x.gif wow', ['https://a.com/x.gif'])).toBe('wow')
+    expect(stripImageUrls('a https://a.com/x.gif b', ['https://a.com/x.gif'])).toBe('a b')
+  })
+
+  it('strips multiple urls', () => {
+    expect(
+      stripImageUrls('https://a.com/x.gif and https://b.com/y.png', [
+        'https://a.com/x.gif',
+        'https://b.com/y.png',
+      ]),
+    ).toBe('and')
+  })
+
+  it('leaves urls not in the list untouched', () => {
+    expect(stripImageUrls('see https://a.com/x.gif', [])).toBe('see https://a.com/x.gif')
+  })
+
+  it('drops lines that become empty but keeps other lines', () => {
+    expect(stripImageUrls('look:\nhttps://a.com/x.gif\ndone', ['https://a.com/x.gif'])).toBe(
+      'look:\ndone',
+    )
+  })
+
+  it('handles empty/nullish text', () => {
+    expect(stripImageUrls('', ['https://a.com/x.gif'])).toBe('')
+    expect(stripImageUrls(null, [])).toBe('')
+  })
 })
