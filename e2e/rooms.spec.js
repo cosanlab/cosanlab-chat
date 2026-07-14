@@ -37,6 +37,9 @@ test('image links unfurl below the bubble', async ({ page }) => {
   await page.getByTestId('composer-input').fill('behold https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg')
   await page.getByTestId('send-button').click()
   await expect(page.getByTestId('meme-image')).toBeVisible()
+  // the unfurled link leaves the bubble: words stay, raw URL gone
+  await expect(page.getByText('behold', { exact: true })).toBeVisible()
+  await expect(page.getByText(/upload\.wikimedia\.org/)).not.toBeVisible()
 })
 
 test('locked room shows banner and blocks composing', async ({ page }) => {
