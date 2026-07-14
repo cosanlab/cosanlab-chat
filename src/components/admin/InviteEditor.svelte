@@ -40,6 +40,7 @@
            type="email" placeholder="invite email…" bind:value={draft} data-testid="invite-input" />
     <button class="rounded-lg bg-accent px-3 py-2 text-white" type="submit" data-testid="invite-add">Add</button>
   </form>
+  <p class="mt-1 text-xs text-mist/70">adding an email doesn't send anything — share the room link with invitees yourself; they'll get a sign-in email when they enter it</p>
   <ul class="mt-2 flex flex-wrap gap-2">
     {#each invited as email (email)}
       <li class="flex items-center gap-1 rounded-full bg-surface-2 px-3 py-1 text-xs">

@@ -33,13 +33,21 @@ export function sendMagicLink(email, roomId) {
   })
 }
 
+export function pendingLinkEmail() {
+  return localStorage.getItem(PENDING_KEY)
+}
+
+export function isMagicLink() {
+  return isSignInWithEmailLink(auth, location.href)
+}
+
 // Call once on app boot; completes the round-trip if this load IS the link.
-export async function completeMagicLink() {
-  if (!isSignInWithEmailLink(auth, location.href)) return false
-  const email =
-    localStorage.getItem(PENDING_KEY) ??
-    prompt('Confirm your email to finish signing in:') // link opened on another device
-  if (!email) return false // user dismissed the prompt — stay signed out
+// Returns false (not a link), true (signed in), or 'needs-email' when the
+// link was opened in a browser without the stored pending email — the
+// caller renders a confirm form and calls back with the typed address.
+export async function completeMagicLink(email = pendingLinkEmail()) {
+  if (!isMagicLink()) return false
+  if (!email) return 'needs-email'
   await signInWithEmailLink(auth, email, location.href)
   localStorage.removeItem(PENDING_KEY)
   history.replaceState({}, '', location.pathname) // strip oobCode etc.

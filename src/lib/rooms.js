@@ -1,7 +1,7 @@
 import { ref, onValue, get, update, serverTimestamp } from 'firebase/database'
 import { db } from './firebase.js'
 import { roomPath } from './paths.js'
-import { encodeEmail } from './keys.js'
+import { encodeEmail, normalizeInviteEmail } from './keys.js'
 
 export function onRoomsIndex(cb) {
   return onValue(ref(db, 'roomsIndex'), (snap) => cb(snap.val() ?? {}))
@@ -51,11 +51,11 @@ export function setRoomFlag(roomId, flag, value) {
 }
 
 export function addInvite(roomId, email) {
-  return update(ref(db), { [roomPath(roomId, 'meta', 'invited', encodeEmail(email))]: true })
+  return update(ref(db), { [roomPath(roomId, 'meta', 'invited', encodeEmail(normalizeInviteEmail(email)))]: true })
 }
 
 export function removeInvite(roomId, email) {
-  return update(ref(db), { [roomPath(roomId, 'meta', 'invited', encodeEmail(email))]: null })
+  return update(ref(db), { [roomPath(roomId, 'meta', 'invited', encodeEmail(normalizeInviteEmail(email)))]: null })
 }
 
 export function deleteRoom(roomId) {
@@ -91,11 +91,11 @@ export function onAdminEmails(cb) {
 }
 
 export function addAdmin(email) {
-  return update(ref(db), { [`config/adminEmails/${encodeEmail(email)}`]: true })
+  return update(ref(db), { [`config/adminEmails/${encodeEmail(normalizeInviteEmail(email))}`]: true })
 }
 
 export function removeAdmin(email) {
-  return update(ref(db), { [`config/adminEmails/${encodeEmail(email)}`]: null })
+  return update(ref(db), { [`config/adminEmails/${encodeEmail(normalizeInviteEmail(email))}`]: null })
 }
 
 // Dashboard ordering: rooms with people in them first (more people first),
