@@ -5,6 +5,7 @@
   import { linkify } from '../lib/derive.js'
   import { tokenizeMentions } from '../lib/mentions.js'
   import { extractImageUrls } from '../lib/media.js'
+  import { spaceBelow, opensUpward, findScrollParent } from '../lib/popover.js'
 
   let {
     message,
@@ -21,6 +22,8 @@
   // ts is null until the server acks the write — that's the "pending" look
   let pending = $derived(!message.ts)
   let showPicker = $state(false)
+  let pickerAbove = $state(false)
+  let rowEl = $state(null)
 
   // Slack-style "you were mentioned" row treatment
   let mentionsMe = $derived(
@@ -38,9 +41,23 @@
     showPicker = false
     onToggleReaction(message.id, emoji)
   }
+
+  // Overlay direction: open upward when the message is near the bottom
+  // of its scroll container, so the picker never forces a scroll.
+  function togglePicker() {
+    if (!showPicker && rowEl) {
+      const container = findScrollParent(rowEl)
+      const containerRect = container
+        ? container.getBoundingClientRect()
+        : { bottom: window.innerHeight }
+      pickerAbove = opensUpward(spaceBelow(rowEl.getBoundingClientRect(), containerRect))
+    }
+    showPicker = !showPicker
+  }
 </script>
 
 <div
+  bind:this={rowEl}
   class="group relative px-4 {showMeta ? 'pt-2' : 'pt-0.5'} pb-0.5 hover:bg-white/[0.02]
     {mentionsMe ? 'bg-blush/10 border-l-2 border-blush rounded-r-lg' : 'rounded-lg'}"
   data-testid="message-{message.id}"
@@ -93,7 +110,7 @@
           title="Add reaction"
           data-testid="add-reaction"
           class="p-1.5 text-mist hover:text-white hover:bg-surface transition"
-          onclick={() => (showPicker = !showPicker)}
+          onclick={togglePicker}
         >
           <!-- smiley-plus -->
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -140,7 +157,9 @@
   {/each}
 
   {#if showPicker}
-    <div class="relative z-20 mt-1 flex {mine ? 'justify-end' : 'justify-start'}">
+    <div
+      class="absolute {pickerAbove ? 'bottom-full mb-1' : 'top-full mt-1'} {mine ? 'right-4' : 'left-4'} z-20"
+    >
       <EmojiPicker onPick={pick} onClose={() => (showPicker = false)} />
     </div>
   {/if}
